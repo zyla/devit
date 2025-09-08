@@ -198,6 +198,9 @@ def main(
 
     for img_file in glob(osp.join(image_dir, '*')):
         base_filename = osp.splitext(osp.basename(img_file))[0]
+        if osp.isfile(osp.join(output_dir, base_filename + '.out.jpg')):
+            print(f"{base_filename} already processed")
+            continue
 
         dataset_dict = {}
         image = utils.read_image(img_file, format="RGB")
