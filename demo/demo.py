@@ -202,6 +202,8 @@ def main(
             print(f"{base_filename} already processed")
             continue
 
+        print(f"Processing {base_filename}")
+
         dataset_dict = {}
         image = utils.read_image(img_file, format="RGB")
         dataset_dict["height"], dataset_dict["width"] = image.shape[0], image.shape[1]
@@ -257,7 +259,8 @@ def main(
             boxes = boxes[indexes]
             pred_classes = pred_classes[indexes]
         colors = assign_colors(pred_classes, label_names, seed=4)
-        output = to_pil_image(draw_bounding_boxes(torch.as_tensor(image).permute(2, 0, 1), boxes, labels=[label_names[cid] for cid in pred_classes.tolist()], colors=colors))
+        output = to_pil_image(draw_bounding_boxes(torch.as_tensor(image).permute(2, 0, 1), boxes,
+                                                  labels=[f"{label_names[cid]} {score:.2f}" for cid, score in zip(pred_classes.tolist(), scores)], colors=colors))
         output.save(osp.join(output_dir, base_filename + '.out.jpg'))
 
 
