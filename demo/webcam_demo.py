@@ -165,8 +165,8 @@ def main(
         device='cpu',
         overlapping_mode=True,
         topk=1,
-        output_pth=False,
-        threshold=0.45
+        manual_filtering=True,
+        threshold=0.45,
     ):
     assert osp.abspath(image_dir) != osp.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
@@ -231,14 +231,14 @@ def main(
 
         if overlapping_mode:
             # remove some highly overlapped predictions
-            mask = box_area(boxes) >= 400
-            boxes = boxes[mask]
-            pred_classes = pred_classes[mask]
-            scores = scores[mask]
+            if manual_filtering:
+                mask = box_area(boxes) >= 400
+                boxes = boxes[mask]
+                pred_classes = pred_classes[mask]
+                scores = scores[mask]
             mask = ops.nms(boxes, scores, 0.3)
             boxes = boxes[mask]
             pred_classes = pred_classes[mask]
-            areas = box_area(boxes)
             indexes = list(range(len(pred_classes)))
             for c in torch.unique(pred_classes).tolist():
                 box_id_indexes = (pred_classes == c).nonzero().flatten().tolist()
