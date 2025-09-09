@@ -19,7 +19,6 @@ def main(
     model_type=None,
     checkpoint=None,
     device="cuda",
-    output_suffix=".mask.png",
 ):
     """
     Interactive mask generator with SAM + OpenCV.
@@ -97,14 +96,15 @@ def main(
             else:
                 click_point["mask"] = masks[best_idx].astype(np.uint8) * 255
 
+    def is_mask(image_path: str):
+        return image_path.endswith(".mask.jpg") or image_path.endswith(".mask.png")
+
     # --- main loop ---
-    for idx, image_path in enumerate(image_files):
-        out_path = os.path.splitext(image_path)[0] + output_suffix
+    for idx, image_path in enumerate(x for x in image_files if not is_mask(x)):
+        base, ext = os.path.splitext(image_path)
+        out_path = f"{base}.mask{ext}"
         if os.path.exists(out_path):
             print(f"[{idx+1}/{len(image_files)}] Skipping (mask exists): {image_path}")
-            continue
-        if image_path.endswith(output_suffix):
-            print(f"[{idx+1}/{len(image_files)}] Skipping (looks like a mask): {image_path}")
             continue
 
         image_bgr = cv2.imread(image_path)
@@ -133,6 +133,8 @@ def main(
                 # draw clicked point
                 if click_point["pt"] is not None:
                     cv2.circle(disp, click_point["pt"], 5, (0, 0, 255), -1)
+
+            cv2.setWindowTitle("image", f"SAMGUI: {image_path}")
 
             cv2.imshow("image", disp)
             key = cv2.waitKey(50) & 0xFF
