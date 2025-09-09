@@ -11,6 +11,8 @@ from collections import defaultdict
 from tqdm import tqdm
 import torchvision.ops as ops
 import torch.nn.functional as F
+import argparse
+
 RGB = tv.io.ImageReadMode.RGB
 
 pixel_mean = torch.Tensor([123.675, 116.280, 103.530]).view(3, 1, 1)
@@ -25,15 +27,28 @@ def resize_to_closest_14x(img):
     return tvF.resize(img, (h, w), interpolation=tvF.InterpolationMode.BICUBIC)
 
 root = osp.join(os.path.abspath(''), '..')
-model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14')
+model: torch.nn.Module = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14')
 device = 0
 resize_op = T.ResizeShortestEdge(
                 short_edge_length=800,
                 max_size=1333,
             )
+
+# Set up argument parser
+parser = argparse.ArgumentParser(description='Build prototypes from image classes.')
+parser.add_argument('--classes_dir', type=str, default='datasets/ycb_images', help='Directory containing class images')
+parser.add_argument('--output_filename', type=str, default='demo/ycb_prototypes.pth', help='Output filename for the prototypes')
+
+# Parse arguments
+args = parser.parse_args()
+
+# Use the parsed arguments
+classes_dir = args.classes_dir
+output_filename = args.output_filename
+
 # reading metas
 class2images = {}
-for f in glob(osp.join(root, 'datasets/ycb_images/**/*'), recursive=True):
+for f in glob(f"{classes_dir}/**/*", recursive=True):
     if osp.isfile(f) and 'mask' not in f:
         image_file = f
         class_name = osp.basename(osp.dirname(f))
@@ -41,8 +56,8 @@ for f in glob(osp.join(root, 'datasets/ycb_images/**/*'), recursive=True):
         if class_name not in class2images:
             class2images[class_name] = []
         class2images[class_name.strip().lower()].append((image_file, mask_file)) 
+
 classes = sorted(class2images.keys())
-to_pil(tv.io.read_image(image_file, RGB) * (tv.io.read_image(mask_file) != 0).to(torch.uint8))
 model = model.to(device)
 class2tokens = {}
 for cls, images in tqdm(class2images.items()):
@@ -74,4 +89,4 @@ category_dict = {
     'prototypes': prototypes,
     'label_names': classes
 }
-torch.save(category_dict, 'ycb_prototypes.pth')
+torch.save(category_dict, output_filename)
