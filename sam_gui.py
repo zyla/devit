@@ -91,7 +91,11 @@ def main(
             # )
             # find mask with highest score
             best_idx = np.argmax(scores)
-            click_point["mask"] = masks[best_idx].astype(np.uint8) * 255
+            prev_mask = click_point["mask"]
+            if prev_mask is not None:
+                click_point["mask"] = prev_mask + masks[best_idx].astype(np.uint8) * 255
+            else:
+                click_point["mask"] = masks[best_idx].astype(np.uint8) * 255
 
     # --- main loop ---
     for idx, image_path in enumerate(image_files):
@@ -137,6 +141,9 @@ def main(
                 cv2.imwrite(out_path, click_point["mask"])
                 print(f"[{idx+1}/{len(image_files)}] Saved mask → {out_path}")
                 break
+
+            if click_point["mask"] is not None and key == ord("r"):
+                click_point["mask"] = None
 
             if key == ord("q") or cv2.getWindowProperty("image",cv2.WND_PROP_VISIBLE) == 0:
                 print("Exiting.")
