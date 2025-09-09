@@ -167,6 +167,7 @@ def main(
         topk=1,
         manual_filtering=True,
         threshold=0.45,
+        video_device="/dev/video0"
     ):
     assert osp.abspath(image_dir) != osp.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
@@ -197,7 +198,7 @@ def main(
     if 'mini soccer' in label_names: # for YCB
         label_names = list_replace(label_names, old='mini soccer', new='ball')
 
-    cap = cv2.VideoCapture("/dev/video6")
+    cap = cv2.VideoCapture(video_device)
     if not cap.isOpened():
         raise Exception("Cannot open camera")
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
